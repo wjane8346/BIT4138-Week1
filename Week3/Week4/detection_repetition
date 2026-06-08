@@ -1,0 +1,90 @@
+# Demonstration 2: Detect repetition in LFSR
+# BIT4138 Week 4
+
+print("=" * 50)
+print("DEMO 2: Detect Repetition in LFSR")
+print("=" * 50)
+
+class LFSR:
+    def __init__(self, seed, taps):
+        self.state = list(seed)
+        self.taps = taps
+        self.initial_state = list(seed)
+    
+    def next_bit(self):
+        feedback = 0
+        for tap in self.taps:
+            feedback ^= self.state[tap]
+        output_bit = self.state[-1]
+        self.state = [feedback] + self.state[:-1]
+        return output_bit
+    
+    def generate_sequence(self, length):
+        bits = []
+        for i in range(length):
+            bits.append(self.next_bit())
+        return bits
+    
+    def reset(self):
+        self.state = list(self.initial_state)
+    
+    def find_period(self, max_bits=1000):
+        """Detect when sequence repeats"""
+        self.reset()
+        seen_states = {}
+        
+        for i in range(max_bits):
+            # Record current state as tuple (hashable)
+            current_state = tuple(self.state)
+            
+            if current_state in seen_states:
+                period = i - seen_states[current_state]
+                return period, i, current_state
+            seen_states[current_state] = i
+            
+            # Generate next bit (advance state)
+            self.next_bit()
+        
+        return None, None, None
+
+# Test LFSR with different tap configurations
+print("\n--- LFSR Period Detection ---")
+
+# 3-bit LFSR (max period = 2^3 - 1 = 7)
+print("\n3-bit LFSR (seed=[1,0,0], taps=[2,1])")
+lfsr1 = LFSR(seed=[1,0,0], taps=[2,1])
+period, position, state = lfsr1.find_period(100)
+if period:
+    print(f"Period detected: {period} bits")
+    print(f"Maximum possible period for 3-bit: 7")
+    if period == 7:
+        print("✓ Maximum period achieved (good)")
+    else:
+        print("✗ Not maximum period")
+else:
+    print("Period not detected within limit")
+
+# 4-bit LFSR (max period = 2^4 - 1 = 15)
+print("\n4-bit LFSR (seed=[1,0,0,0], taps=[3,2])")
+lfsr2 = LFSR(seed=[1,0,0,0], taps=[3,2])
+period, position, state = lfsr2.find_period(100)
+if period:
+    print(f"Period detected: {period} bits")
+    print(f"Maximum possible period for 4-bit: 15")
+else:
+    print("Period not detected within limit (may be longer)")
+
+# Show repetition pattern
+print("\n--- Visualizing Repetition ---")
+lfsr3 = LFSR(seed=[1,0,0], taps=[2,1])
+lfsr3.reset()
+bits = []
+for i in range(30):
+    bits.append(lfsr3.next_bit())
+
+print(f"30 bits: {bits}")
+print("Watch for repeating pattern (period should be 7)")
+print("Bits 0-6:   " + str(bits[0:7]))
+print("Bits 7-13:  " + str(bits[7:14]))
+print("Bits 14-20: " + str(bits[14:21]))
+print("Pattern repeats every 7 bits ✓")
